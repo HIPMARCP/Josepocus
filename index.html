@@ -365,6 +365,16 @@ svg:not(.play) .mv{animation:none!important}
 .hipwhy h3{margin:0 0 6px}
 .hipflow svg{width:100%;display:block}
 @media (max-width:1000px){.hipwhy{grid-template-columns:1fr}}
+.tlmore{display:flex;align-items:center;gap:10px;margin:2px 0 0 0;background:none;border:none;color:#ffb3ac;cursor:pointer;padding:0;font-size:13px}
+.tlmore::before{content:"";width:0}
+.tlmore{font-size:20px;line-height:1}
+.tlmore span{font-size:12.5px;color:var(--muted)}
+.tlmore:hover span{color:var(--text)}
+.tlmore{animation:tlb 1.4s ease-in-out infinite}
+@keyframes tlb{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
+.tlreset{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer}
+.tl li.tlnew{animation:tlin .35s ease-out}
+@keyframes tlin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 /* gallery */
 .gtools{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}
 .gtools > div{min-width:160px}
@@ -1487,6 +1497,20 @@ const CASES=[
   out:'No sale de la PCR (sin RCE).'}
 ];
 let curC='caso-1';
+const tlShown={};
+function tlHTML(c){
+  const cut=c.tl.findIndex(x=>x.k==='bad');const base=cut<0?c.tl.length:cut+1;
+  const n=Math.min(c.tl.length,Math.max(base,tlShown[c.id]||base));
+  const rest=c.tl.length-n;
+  return `<ul class="tl">${c.tl.slice(0,n).map((s,i)=>`<li class="${s.k}${i>=base?' tlnew':''}"><span class="t">${s.t}</span>${s.x}</li>`).join('')}</ul>
+   ${rest>0?`<button class="tlmore" data-tlnext>▼<span>Siguiente (${rest})</span></button>`:(n>base?`<button class="tlreset" data-tlreset>↺ Volver a ocultar</button>`:'')}`;
+}
+document.addEventListener('click',e=>{
+  const nx=e.target.closest('[data-tlnext]'),rs=e.target.closest('[data-tlreset]');if(!nx&&!rs)return;
+  const c=CASES.find(x=>x.id===curC);const cut=c.tl.findIndex(x=>x.k==='bad');const base=cut<0?c.tl.length:cut+1;
+  tlShown[c.id]=rs?base:Math.max(base,tlShown[c.id]||base)+1;
+  document.getElementById('tlBox').innerHTML=tlHTML(c);
+});
 const VROWS=[{k:'FC',l:'FC (lpm)',lo:0,hi:180},{k:'TAS',l:'TA sistólica (mmHg)',lo:0,hi:200},{k:'Sat',l:'SatO₂ (%)',lo:50,hi:100},{k:'EtCO2',l:'EtCO₂ (mmHg)',lo:0,hi:45}];
 function vitals(c){
   const v=c.vit;if(!v)return'';
@@ -1569,7 +1593,7 @@ function renderCases(){
    <div class="card"><div style="margin-bottom:8px"><span class="pill" style="background:#2a2433;color:#d3bdf2;border-color:#463a5a">Ritmo: AESP</span>${c.pills.filter(p=>p!=='PCR · AESP').map(p=>`<span class="pill">${p}</span>`).join('')}${c.pillB?`<span class="pill b">${c.pillB}</span>`:''}</div>
     <h2 style="margin-bottom:10px">${c.title}</h2>
     <ul class="k">${c.hist.map(x=>`<li>${x}</li>`).join('')}</ul></div>
-   <div class="card"><h3>Evolución</h3><ul class="tl">${c.tl.map(s=>`<li class="${s.k}"><span class="t">${s.t}</span>${s.x}</li>`).join('')}</ul></div>
+   <div class="card"><h3>Evolución</h3><div id="tlBox">${tlHTML(c)}</div></div>
   </div>
   ${vitals(c)}
   <h3>Hallazgos HIMAPS</h3>
